@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/projeto.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/chatbot.css">
+    <title>Document</title>
+</head>
+<body>
+    <label for="name">Qual o contexto:</label>
+    <input type="text" value="" id="mensagem1" name="mensagem1">
+    <p id="displayText">Fale com o bot:</p>
+    <input type="text" id="mensagem">
+    <br>
+    <button id="myButton">Gerar Resposta</button>
+    <script type="importmap">
+        {
+          "imports": {
+            "@google/generative-ai": "https://esm.run/@google/generative-ai"
+          }
+        }
+    </script>
+    <script type="module">
+        document.getElementById('myButton').addEventListener('click', hello);
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+        const genAI = new GoogleGenerativeAI("AIzaSyC9O8TBepjlzgyJ__9Hxh3GVsQ4ItCAmS8");
+
+        async function hello() {
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const inputUser = document.getElementById("mensagem");
+            const promptInicial = document.getElementById('mensagem1').value;
+            const prompt = inputUser.value;
+
+            const displayText = document.getElementById('displayText');
+            displayText.textContent += `\nContexto: ${promptInicial}`;
+            displayText.textContent += `\nUsuário: ${prompt}`;
+
+            try {
+                const result = await model.generateContent(promptInicial + prompt);
+                const response = await result.response;
+                const text = await response.text();
+
+                displayText.textContent += `\nBot: ${text}`;
+
+                await fetch('/api/chat-historico', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        IdUsuario: "user123",
+                        MensagemUsuario: prompt,
+                        MensagemBot: text
+                    })
+                });
+
+            } catch (error) {
+                displayText.textContent += `\nBot: Ocorreu um erro.`;
+                console.error(error);
+            }
+        }
+    </script>
+    <script src="index.js"></script>
+    <script src="items.js"></script>
+</body>
+</html>
